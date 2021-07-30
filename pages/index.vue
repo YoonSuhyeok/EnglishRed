@@ -1,62 +1,72 @@
 <template>
     <div>
-        <div class="boxs" v-for="item in topArray" :key="item.id">
-            <input-2-box @chan="submit" :top="item"></input-2-box>
+        <div class="boxs" v-for="item in words" :key="item.id" >
+            <word-box @changeElement="submit" :top="item"></word-box>
         </div>
         
         <v-text-field
-            label="입력해주세요"
-            solo
-            @keyup.enter="submit"
-            v-model="message"
+            label="입력해주세요" solo
+            @keyup.enter="submit" v-model="message"
         ></v-text-field>
+        <v-btn @click="change">Click</v-btn>
     </div>
 </template>
-<style >
+<style>
  .boxs {
-     display: inline;
+    display: inline;
  }
  input-2-box {
-   display: block;  
+   display: block;
+ }
+ v-text-field {
+    display: inline;
  }
 </style>
-</style>
 <script lang="ts">
-    import { Component, Vue, Watch } from 'vue-property-decorator';
-    import Input2Box from '@/components/input2Box.vue';
+    import { Component, Vue, Watch, Ref } from 'vue-property-decorator';
+    import WordBoxElement from '@/interface/wordbox.interface';
+    import WordBox from '~/components/wordBox.vue';
 
-    interface card {
-        top: string;
-        bottom: string;
-    }
-
-    @Component({
-        components: {Input2Box}
-    })
+    @Component({ components: {WordBox} })
     export default class Index extends Vue {
         message: string = '';
-        topArray: card[] = [];
+        words: WordBoxElement[] = [];
+        replaceWords: WordBoxElement[] = [];
+        @Ref('inputs') boxs!: WordBox;
 
-        @Watch('topArray', {immediate: true, deep: true})
-        update(newValue:card[], oldValue:card[]){
-            console.log(newValue, oldValue);
-        }
+        @Watch('words', {immediate: true, deep: true})
+        update(newValue:WordBoxElement[], oldValue:WordBoxElement[]){}
         
         submit(){
             const temp: string[]|undefined = this.message?.split(' ');
-            if(temp){ 
-                console.log(temp);
+            if(this.message!=='' && temp){
                 temp.forEach(
                     i => {
-                        
-                        this.topArray.push( {
+                        this.words.push( {
                             top: i,
-                            bottom: "__".repeat(i.length)
+                            bottom: "_".repeat(i.length)
+                        })
+                        this.replaceWords.push( {
+                            top: i,
+                            bottom: "".repeat(i.length)
                         })
                     }
                 );
             }
+            for(let i=0; i<this.words.length; ++i){
+                if(this.words[i].top===''){
+                    console.log(this.words[i]);
+                    this.words.splice(i, 1);
+                    this.replaceWords.splice(i, 1);
+                }
+            }
             this.message = '';
+        }
+
+        change(){
+            const temp = this.words;
+            this.words = this.replaceWords;
+            this.replaceWords = temp;
         }
     }
 </script>
