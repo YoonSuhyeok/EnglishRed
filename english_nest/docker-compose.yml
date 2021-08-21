@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+        db:
+                image: mariadb
+                ports:
+                        - 3306:3306
+                volumes:
+                        - ~/docker/mariadb/etc/mysql/conf.d:/etc/mysql/conf.d:ro
+                        - ~/docker/mariadb/var/lib/mysql:/var/lib/mysql
+                        - ~/docker/mariadb/var/log/maria:/var/log/maria
+                environment:
+                        - TZ=Asia/Seoul
+                        - MYSQL_DATABASE=english_red
+                        - MYSQL_ROOT_PASSWORD=1234
+                        - MYSQL_ROOT_HOST=%
+                command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']
