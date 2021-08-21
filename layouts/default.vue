@@ -28,13 +28,13 @@
       app
     >
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
-      <v-toolbar-title v-text="title" @click="dialogPageShow"/>
+      <v-toolbar-title v-text="title[currentPage]" @click="dialogPageShow"/>
       <v-spacer />
       <v-btn v-if="!loginState" @click="dialogLoginShow">{{nickname}}로그인</v-btn>
       <v-btn v-else @click="logout">{{nickname}} 로그아웃</v-btn>
       <v-dialog v-model="dialogLogin" transition="dialog-bottom-transition" width="1000px">
        <v-text-field v-model="email" autofocus solo width="500px" ></v-text-field>
-       <v-text-field v-model="password" solo width="500px" @keypress.enter="closeLoginDialog"></v-text-field>
+       <v-text-field type="password" v-model="password" solo width="500px" @keypress.enter="closeLoginDialog"></v-text-field>
       </v-dialog>
     </v-app-bar>
     <v-main>
@@ -70,8 +70,7 @@
     miniVariant: Boolean = false;
     right: Boolean = true;
     rightDrawer: Boolean = false;
-    items = this.$store.getters['modulePage/page']
-
+    
     dialogPage: Boolean = false;
     dialogPageTitle: string = '';
 
@@ -88,13 +87,29 @@
     }
 
     get title(){
-      const currentPage = this.$store.getters['modulePage/currentPage'];
-      return this.$store.getters['modulePage/page'][currentPage];
+      return this.$store.getters['modulePage/page'];
+    }
+
+    get items(){
+      return this.$store.getters['modulePage/page'];
+    }
+
+    get currentPage(){
+      return this.$store.getters['modulePage/currentPage'];
+    }
+
+    @Watch('title')
+    onTitleChanged(val: string, old: string){
+
     }
     
     logout(){
       this.$store.dispatch('moduleUser/logout');
+      this.$store.dispatch('modulePage/logout');
+      this.$store.dispatch('moduleWord/logout');
       // 추가적으로 Page도 초기화해야한다.
+      this.password = '';
+      this.email = '';
     }
 
     listClick(pageName: string, index: number){
@@ -109,7 +124,13 @@
 
     dialogLoginShow(){ this.dialogLogin = true; }
 
-    closeDialogPage(){ this.dialogPage = false; }
+    closeDialogPage(){ 
+      this.dialogPage = false;
+      this.$store.dispatch('modulePage/setTitle', {
+        userId: this.$store.getters['moduleUser/email'],
+        title: this.dialogPageTitle
+      });
+    }
     
     async closeLoginDialog(){
       const login = await AxiosService.instance.post('/user/login', {

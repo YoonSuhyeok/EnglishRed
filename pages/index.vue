@@ -1,21 +1,27 @@
 <template>
     <div>
-        <div class="boxs" v-for="item in words" :key="item.id" >
-            <word-box @changeElement="submit" :top="item"></word-box>
+        <div class="boxs">
+            <div v-for="item in words" :key="item.id" >
+                <word-box @changeElement="submit" :top="item"></word-box>
+            </div>
         </div>
         
         <v-text-field
             label="입력해주세요" solo
             @keyup.enter="submit" v-model="message"
         ></v-text-field>
-        <v-btn @click="change">Click</v-btn>
+        <v-btn @click="change">Only English</v-btn>
         <v-btn @click="serverPush">저장</v-btn>
         {{ this.$store.state.wordModule}}
     </div>
 </template>
 <style>
  .boxs {
-    display: inline;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+
+    justify-content: flex-start;
  }
  input-2-box {
    display: block;
@@ -32,72 +38,61 @@
     @Component({ components: {WordBox} })
     export default class Index extends Vue {
         message: string = '';
-        replaceWords!: WordBoxElement[]
-        
-        created(){
-            console.log(this.words);
-            const words = 
-            this.replaceWords
-        }
-
+        replaceWords: WordBoxElement[] = [];
         @Ref('inputs') boxs!: WordBox;
+
+        created(){
+            for(let i=0; i<this.words.length; ++i){
+                this.replaceWords.push({bottom: '_', top: this.words[i].top })
+            }
+        }
 
         get words(){
             return this.$store.getters['moduleWord/wordBoxs'];
         }
-        // @Watch('words', {immediate: true, deep: true})
-        // update(newValue:WordBoxElement[], oldValue:WordBoxElement[]){}
+        
+        @Watch('words', {immediate: true, deep: true})
+        update(newValue:WordBoxElement[], oldValue:WordBoxElement[]){
+            this.replaceWords = [];
+            for(let i=0; i<this.words.length; ++i){
+                this.replaceWords.push({bottom: '_', top: this.words[i].top })
+            }
+        }
         
         submit(){
-            const top: string[]|undefined = this.message?.split(' ');
-            if(top!==undefined){
-                const bottom: string[] = [];
-                top.forEach(i=>{
-                    bottom.push('_');
-                })
-                this.$store.dispatch('moduleWord/enter', {top, bottom});
-                console.log('not null');
+            if(this.$store.getters['moduleUser/loginState']){
+                const top: string[]|undefined = this.message?.split(' ');
+                if(top!==undefined){
+                    const bottom: string[] = [];
+                    top.forEach(i=>{
+                        bottom.push('_');
+                    })
+                    this.$store.dispatch('moduleWord/enter', {top, bottom});
+                    console.log('not null');
+                }
+                this.message = '';
             }
-            // if(this.message!=='' && temp){
-            //     temp.forEach(
-            //         i => {
-            //             this.words.push( {
-            //                 top: i,
-            //                 bottom: "_".repeat(i.length)
-            //             })
-            //             this.replaceWords.push( {
-            //                 top: i,
-            //                 bottom: "".repeat(i.length)
-            //             })
-            //         }
-            //     );
-            // }
-            // for(let i=0; i<this.words.length; ++i){
-            //     if(this.words[i].top===''){
-            //         console.log(this.words[i]);
-            //         this.words.splice(i, 1);
-            //         this.replaceWords.splice(i, 1);
-            //     }
-            // }
-            this.message = '';
         }
 
         async change(){
-            const temp = this.words;
-            //this.words = this.replaceWords;
-            this.replaceWords = temp;
-            //const db = await AxiosService.instance.get('word');            
+            if(this.$store.getters['moduleUser/loginState']){
+                const temp = this.words;
+                this.$store.dispatch('moduleWord/replace', this.replaceWords);
+                this.replaceWords = temp;
+            }
         }
         
         serverPush(){
-            const page = this.$store.getters['modulePage/page'];
-            const currentPageNumber = this.$store.getters['modulePage/currentPage']
-            const email = this.$store.getters['moduleUser/email']
-            this.$store.dispatch('moduleWord/saveWordBoxs', {
-                wordBox: this.words,
-                pageName: page[currentPageNumber],
-                userId: email,
-            });
+            if(this.$store.getters['moduleUser/loginState']){
+                const page = this.$store.getters['modulePage/page'];
+                const currentPageNumber = this.$store.getters['modulePage/currentPage']
+                const email = this.$store.getters['moduleUser/email']
+                this.$store.dispatch('moduleWord/saveWordBoxs', {
+                    wordBox: this.words,
+                    pageName: page[currentPageNumber],
+                    userId: email,
+                });
+            }
         }
     }
 </script>

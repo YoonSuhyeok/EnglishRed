@@ -20,9 +20,15 @@ const moduleWord: Module<moduleWordState, RootState> = {
             state.wordBoxs = state.wordBoxs.concat(wordBox);
             console.log(state.wordBoxs.concat(wordBox));
         },
+        logout(state){
+            state.wordBoxs = [];
+        },
+        replace(state, data: WordBoxElement[]){
+            state.wordBoxs = data;
+            console.log(state.wordBoxs);
+        }
     },
     actions:{
-        //saveTop({state, getters, dispatch, commit}: ActionContext<State, State>){
         saveWordBoxs({state, commit}: ActionContext<moduleWordState, RootState>,
             data: { wordBox: WordBoxElement[], pageName: string, userId: string }){
             const tops: string[] = [];
@@ -53,16 +59,22 @@ const moduleWord: Module<moduleWordState, RootState> = {
                 for(let i=0; i<top.length; ++i){
                     wordBox.push({top: top[i], bottom: bottom[i]});
                 }
+                commit('setWordBox', []);
                 commit('addWordBox', wordBox);
             }
         },
         enter({commit}, data: { top: string[], bottom: string[]}){
-            console.log('hihi')
             const wordBox: WordBoxElement[] = [];
             for(let i=0; i<data.top.length; ++i){
                 wordBox.push({top: data.top[i], bottom: data.bottom[i]});
             };
             commit('addWordBox', wordBox);
+        },
+        logout({commit}){
+            commit('logout');
+        },
+        replace({commit}, data: WordBoxElement[]){
+            commit('replace', data);
         }
     },
     getters:{

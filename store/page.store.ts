@@ -19,6 +19,15 @@ const modulePage: Module<modulePageState, RootState> = {
         },
         setCurrentPageNumber(state, index: number){
             state.currentPage = index;
+        },
+        logout(state){
+            state.page = [];
+            state.currentPage = 0;
+        },
+        setTitle(state, title){
+            const pages = state.page;
+            pages[state.currentPage] = title;
+            state.page = pages;
         }
     },
     actions:{
@@ -41,6 +50,13 @@ const modulePage: Module<modulePageState, RootState> = {
         },
         async loadPage({commit}, currentPageNumber: number){
             commit('setCurrentPageNumber', currentPageNumber);
+        },
+        logout({commit}){
+            commit('logout');
+        },
+        async setTitle({state, commit}, data: {userId: string, title: string}){
+            AxiosService.instance.patch(`/page?userId=${data.userId}`, { name: state.page[state.currentPage], newName: data.title});
+            commit('setTitle', data.title);
         }
     },
     getters:{

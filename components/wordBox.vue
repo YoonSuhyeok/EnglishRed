@@ -3,12 +3,12 @@
         <button 
             class="inbox" id="top" @mousedown.middle="invisibleBottom"
             @click="editBottomDiaglog" @mousedown.right="editTopDiaglog">
-            {{top.top}}
+            {{wordBox.top}}
         </button>
 
         <button :style="{visibility: bottomeIsShow ? 'visible' : 'hidden' }"
         class="inbox" id="bottom" @click="visibleToInvisibleBottome">
-            {{top.bottom}}
+            {{wordBox.bottom}}
         </button>
 
         <v-dialog v-model="dialogTop" 
@@ -58,25 +58,31 @@ button:active {
 </style>
 
 <script lang="ts">
-    import { Component, Prop, Vue, Emit } from 'vue-property-decorator';
+    import { Component, Prop, Vue, Emit, Watch } from 'vue-property-decorator';
     import WordBoxElement from '@/interface/wordbox.interface';
     
     @Component
     export default class WordBox extends Vue {
-        @Prop() top?: WordBoxElement;
+        @Prop() wordBox?: WordBoxElement;
         dialogTop: Boolean = false;
         dialogBottom: Boolean = false;
         dialogTopText: string = '';
         dialogBottomText: string = '';
         bottomeIsShow: Boolean = false;
 
+        @Watch('top')
+        update(newValue:WordBoxElement, oldValue:WordBoxElement){
+            if(!newValue.bottom.includes('_'))
+                this.bottomeIsShow = !this.bottomeIsShow;
+        }
+
         @Emit()
         changeElement(){
-            return this.top;
+            return this.wordBox;
         }
 
         invisibleBottom(){
-            if(!this.top?.bottom.includes('_'))
+            if(!this.wordBox?.bottom.includes('_'))
                 this.bottomeIsShow = !this.bottomeIsShow;
         }
 
@@ -87,7 +93,7 @@ button:active {
         closebottom(){
             this.dialogBottom = false;
             this.bottomeIsShow = true;
-            this.top!.bottom = this.dialogBottomText;
+            this.wordBox!.bottom = this.dialogBottomText;
         }
 
         editTopDiaglog(){
@@ -101,7 +107,7 @@ button:active {
         @Emit()
         closeTop(){
             this.dialogTop = false;
-            this.top!.top = this.dialogTopText;
+            this.wordBox!.top = this.dialogTopText;
             return this.dialogTop
         }
     }
