@@ -1,11 +1,11 @@
 import { RootState } from './index';
 import { Module, ActionContext } from 'vuex';
-import AxiosService from '@/services/server.service';
 
 export interface moduleUserState {
     email: string;
     nickname: string;
     loginState: Boolean;
+    acessToken: string;
 }
 
 const moduleUser: Module<moduleUserState, RootState> = {
@@ -13,6 +13,7 @@ const moduleUser: Module<moduleUserState, RootState> = {
     state:{
         email: '',
         nickname: '',
+        acessToken: '',
         loginState: false,
     },
     mutations:{
@@ -28,7 +29,11 @@ const moduleUser: Module<moduleUserState, RootState> = {
             state.email = '';
             state.nickname = '';
             state.loginState = false;
+        },
+        setAccessToken(state, token){
+            state.acessToken = token;
         }
+
     },
     actions:{
         async loginUser({commit}: ActionContext<moduleUserState, RootState>, data: { nickname: string, login: Boolean }){
@@ -37,6 +42,9 @@ const moduleUser: Module<moduleUserState, RootState> = {
         setEmail({commit}, email: string){
             commit('setEmail', email);
         },
+        setAccessToken({commit}, token: string){
+            commit('setAccessToken', token);
+        },
         logout({commit}){
             commit('logout');
         }
@@ -44,7 +52,8 @@ const moduleUser: Module<moduleUserState, RootState> = {
     getters:{
         loginState: (state) => state.loginState,
         nickname: (state) => state.nickname,
-        email: (state) => state.email
+        email: (state) => state.email,
+        accessToken: (state) => state.acessToken,
     }
 };
 //const wordModule = () => new Vuex.Store(moduleWord);

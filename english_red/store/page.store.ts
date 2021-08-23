@@ -16,6 +16,7 @@ const modulePage: Module<modulePageState, RootState> = {
     mutations:{
         pushPage(state: modulePageState, page: string){
             state.page.push(page);
+            console.log(state.page)
         },
         setCurrentPageNumber(state, index: number){
             state.currentPage = index;
@@ -44,6 +45,7 @@ const modulePage: Module<modulePageState, RootState> = {
             await AxiosService.instance.post('/page', { name: data.name+3, userId: data.userId});
             const page = await AxiosService.instance.get(`/page?userId=${data.userId}`);
             const array: {name: string}[] = page.data;
+            commit('logout');
             array.forEach( i=> {
                 commit('pushPage', i.name);
             })
@@ -55,8 +57,14 @@ const modulePage: Module<modulePageState, RootState> = {
             commit('logout');
         },
         async setTitle({state, commit}, data: {userId: string, title: string}){
-            AxiosService.instance.patch(`/page?userId=${data.userId}`, { name: state.page[state.currentPage], newName: data.title});
+            AxiosService.instance.patch(`/page?userId=${data.userId}`, { 
+                name: state.page[state.currentPage], newName: data.title});
             commit('setTitle', data.title);
+        },
+        AddPage({commit}, data: {userId: string, name: string}){
+            AxiosService.instance.post('/page', { name: data.name, userId: data.userId});
+            console.log(data);
+            commit('pushPage', data.name);
         }
     },
     getters:{

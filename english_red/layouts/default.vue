@@ -28,24 +28,33 @@
       app
     >
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" />
+      <v-btn fab @click="pageAdd">
+        <v-icon dark>
+          mdi-plus
+        </v-icon>
+      </v-btn>
       <v-toolbar-title v-text="title[currentPage]" @click="dialogPageShow"/>
       <v-spacer />
       <v-btn v-if="!loginState" @click="dialogLoginShow">{{nickname}}로그인</v-btn>
       <v-btn v-else @click="logout">{{nickname}} 로그아웃</v-btn>
-      <v-dialog v-model="dialogLogin" transition="dialog-bottom-transition" width="1000px">
-       <v-text-field v-model="email" autofocus solo width="500px" ></v-text-field>
-       <v-text-field type="password" v-model="password" solo width="500px" @keypress.enter="closeLoginDialog"></v-text-field>
-      </v-dialog>
     </v-app-bar>
     <v-main>
       <v-container>
         <Nuxt />
       </v-container>
-        <v-dialog v-model="dialogPage" 
+      <v-dialog v-model="dialogPage" 
       transition="dialog-bottom-transition" width="1000px">
        <v-text-field
           v-model="dialogPageTitle" autofocus solo width="500px" 
           @keypress.enter="closeDialogPage">
+        </v-text-field>
+      </v-dialog>
+
+      <v-dialog v-model="dialogAddPage" 
+      transition="dialog-bottom-transition" width="1000px">
+       <v-text-field
+          v-model="dialogNewPageTitle" autofocus solo width="500px" 
+          @keypress.enter="closeDialogNewPage">
         </v-text-field>
       </v-dialog>
     </v-main>
@@ -59,7 +68,7 @@
 </template>
 
 <script lang="ts">
-  import AxiosService from '@/services/server.service';
+  import AxiosService from '../services/server.service';
 
   import { Component, Vue, Watch, Ref } from 'vue-property-decorator';
   @Component({ components: {} })
@@ -72,12 +81,43 @@
     rightDrawer: Boolean = false;
     
     dialogPage: Boolean = false;
-    dialogPageTitle: string = '';
+    dialogAddPage = false;
 
-    email: string = '';
-    password: string = '';
-    dialogLogin: Boolean = false;
-    
+    dialogPageTitle: string = '';
+    dialogNewPageTitle: string = '';
+
+
+    async created(){
+      const code = window.location.search.substring(6);
+      console.log(code);
+      // if(code){
+      //   const token = await AxiosService.instance.get('/token');
+      // }
+      if(code){
+        const user = await AxiosService.instance.get('/profile',{
+          headers: { 'Authorization': 'Bearer' + code }
+        });
+
+        this.$store.dispatch('moduleUser/loginUser', { nickname: user.data.nickname, login: true});
+        this.$store.dispatch('moduleUser/setEmail', user.data.id);
+        this.$store.dispatch('moduleUser/setAccessToken', code);
+        await this.$store.dispatch('modulePage/findPage', user.data.id);
+        const page: string[] = this.$store.getters['modulePage/page'];
+         if(page.length == 0){
+           await this.$store.dispatch('modulePage/firstInit', {
+             name: '첫번째 글',
+             userId: user.data.id
+           });
+         } else {
+           await this.$store.dispatch('moduleWord/loadWord', {
+             pageName: this.$store.getters['modulePage/page'][0], 
+             userId: user.data.id
+           });
+         }
+        window.location.href = 'http://localhost:3000';
+      }
+    }
+
     get loginState(){
       return this.$store.getters['moduleUser/loginState'];
     }
@@ -108,8 +148,6 @@
       this.$store.dispatch('modulePage/logout');
       this.$store.dispatch('moduleWord/logout');
       // 추가적으로 Page도 초기화해야한다.
-      this.password = '';
-      this.email = '';
     }
 
     listClick(pageName: string, index: number){
@@ -122,7 +160,9 @@
 
     dialogPageShow(){ this.dialogPage = true; }
 
-    dialogLoginShow(){ this.dialogLogin = true; }
+    async dialogLoginShow(){
+      window.location.href = 'http://localhost:50000/login'
+    }
 
     closeDialogPage(){ 
       this.dialogPage = false;
@@ -132,26 +172,18 @@
       });
     }
     
-    async closeLoginDialog(){
-      const login = await AxiosService.instance.post('/user/login', {
-        email: this.email, password: this.password });
-      if(login.data.login) {
-        this.$store.dispatch('moduleUser/loginUser', login.data);
-        this.$store.dispatch('moduleUser/setEmail', this.email);
-        await this.$store.dispatch('modulePage/findPage', this.email);
-        const page: string[] = this.$store.getters['modulePage/page'];
-        if(page.length == 0){
-          this.$store.dispatch('modulePage/firstInit', {
-            name: '첫번째 글',
-            userId: this.email
-          });
-        } else {
-          this.$store.dispatch('moduleWord/loadWord', {
-            pageName: this.$store.getters['modulePage/page'][0], userId: this.email
-          });
-        }
-        this.dialogLogin = false;
+    pageAdd(){
+      if(this.$store.getters['moduleUser/loginState']){
+        this.dialogAddPage=true;
       }
+    }
+
+    closeDialogNewPage(){
+      this.dialogAddPage=false;
+      this.$store.dispatch('modulePage/AddPage', {
+        name: this.dialogNewPageTitle,
+        userId: this.$store.getters['moduleUser/email']
+      });
     }
   }
 

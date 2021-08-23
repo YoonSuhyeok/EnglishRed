@@ -1,8 +1,10 @@
 <template>
     <div>
         <div class="boxs">
-            <div v-for="item in words" :key="item.id" >
-                <word-box @changeElement="submit" :top="item"></word-box>
+            <div v-for="(item, i) in words" :key="item.id" >
+                <word-box @changeElement="submit" :index=i @invisibleBottom="changeWordBoxVisble"
+                @closebottom="changeBottom"
+                :wordBox="item" :bottomeIsShow=isShowBottoms[i]></word-box>
             </div>
         </div>
         
@@ -12,7 +14,6 @@
         ></v-text-field>
         <v-btn @click="change">Only English</v-btn>
         <v-btn @click="serverPush">저장</v-btn>
-        {{ this.$store.state.wordModule}}
     </div>
 </template>
 <style>
@@ -32,18 +33,25 @@
 </style>
 <script lang="ts">
     import { Component, Vue, Watch, Ref } from 'vue-property-decorator';
-    import WordBoxElement from '@/interface/wordbox.interface';
-    import WordBox from '~/components/wordBox.vue';
+    import WordBoxElement from '../interface/wordbox.interface';
+    import WordBox from '../components/wordBox.vue';
 
     @Component({ components: {WordBox} })
     export default class Index extends Vue {
         message: string = '';
-        replaceWords: WordBoxElement[] = [];
         @Ref('inputs') boxs!: WordBox;
+        bottomIsShows: Boolean[] = [];
 
         created(){
+            const page = this.$store.getters['modulePage/page'];
+            const currentPage = this.$store.getters['modulePage/currentPage'];
+            this.$store.dispatch('moduleWord/loadWord',{
+                pageName: page[currentPage],
+                userId: this.$store.getters['moduleUser/email'],
+                accessToken: this.$store.getters['moduleUser/accessToken'],
+            });
             for(let i=0; i<this.words.length; ++i){
-                this.replaceWords.push({bottom: '_', top: this.words[i].top })
+                this.bottomIsShows.push(true);
             }
         }
 
@@ -51,21 +59,32 @@
             return this.$store.getters['moduleWord/wordBoxs'];
         }
         
-        @Watch('words', {immediate: true, deep: true})
-        update(newValue:WordBoxElement[], oldValue:WordBoxElement[]){
-            this.replaceWords = [];
-            for(let i=0; i<this.words.length; ++i){
-                this.replaceWords.push({bottom: '_', top: this.words[i].top })
-            }
+        get isShowBottoms(){
+            return this.bottomIsShows;
         }
         
+        changeWordBoxVisble(index: number){
+            console.log(index);
+            this.bottomIsShows[index] = !this.bottomIsShows[index];
+            let empty = [];
+            for(let i=0; i<this.bottomIsShows.length; ++i){
+                empty.push(this.bottomIsShows[i]);
+            }
+            this.bottomIsShows = empty;
+            console.log(this.bottomIsShows)
+        }
+
+        changeBottom(index:number, bottom: string){
+            console.log(index, bottom);
+        }
+
         submit(){
             if(this.$store.getters['moduleUser/loginState']){
                 const top: string[]|undefined = this.message?.split(' ');
                 if(top!==undefined){
                     const bottom: string[] = [];
                     top.forEach(i=>{
-                        bottom.push('_');
+                        bottom.push('');
                     })
                     this.$store.dispatch('moduleWord/enter', {top, bottom});
                     console.log('not null');
@@ -74,12 +93,13 @@
             }
         }
 
-        async change(){
-            if(this.$store.getters['moduleUser/loginState']){
-                const temp = this.words;
-                this.$store.dispatch('moduleWord/replace', this.replaceWords);
-                this.replaceWords = temp;
+        change(){
+            let empty = [];
+            for(let i=0; i<this.bottomIsShows.length; ++i){
+                empty.push(!this.bottomIsShows[i]);
             }
+            this.bottomIsShows = empty;
+            console.log(this.bottomIsShows)
         }
         
         serverPush(){

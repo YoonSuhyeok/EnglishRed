@@ -1,21 +1,21 @@
 <template>
     <div class="box">
         <button 
-            class="inbox" id="top" @mousedown.middle="invisibleBottom"
-            @click="editBottomDiaglog" @mousedown.right="editTopDiaglog">
+            class="inbox" id="top" @mousedown.middle="invisibleBottom(index)"
+            @click="editBottomDiaglog">
             {{wordBox.top}}
         </button>
 
         <button :style="{visibility: bottomeIsShow ? 'visible' : 'hidden' }"
-        class="inbox" id="bottom" @click="visibleToInvisibleBottome">
+        class="inbox" id="bottom" @click="editTopDiaglog">
             {{wordBox.bottom}}
         </button>
 
         <v-dialog v-model="dialogTop" 
             transition="dialog-bottom-transition" width="1000px">
             <v-text-field
-                v-model="dialogTopText" label="수정할 값을 입력하세오"
-                autofocus solo width="500px" @keypress.enter="closeTop">
+                v-model="wordBox.bottom" label="수정할 값을 입력하세오"
+                autofocus solo width="500px" @keypress.enter="closeTop(index, wordBox.bottom)">
             </v-text-field>
         </v-dialog>
 
@@ -23,7 +23,7 @@
             transition="dialog-bottom-transition" width="1000px">
             <v-card height="150px">
                 <v-text-field
-                    v-model="dialogBottomText" label="한글 뜻을 적어주세요"
+                    v-model="wordBox.bottom" label="한글 뜻을 적어주세요"
                     autofocus solo width="500px" @keyup.enter="closebottom">
                 </v-text-field>
             </v-card>
@@ -59,41 +59,31 @@ button:active {
 
 <script lang="ts">
     import { Component, Prop, Vue, Emit, Watch } from 'vue-property-decorator';
-    import WordBoxElement from '@/interface/wordbox.interface';
+    import WordBoxElement from '../interface/wordbox.interface';
     
     @Component
     export default class WordBox extends Vue {
         @Prop() wordBox?: WordBoxElement;
+        @Prop() bottomeIsShow = false;
+        @Prop() index?: number;
         dialogTop: Boolean = false;
         dialogBottom: Boolean = false;
-        dialogTopText: string = '';
-        dialogBottomText: string = '';
-        bottomeIsShow: Boolean = false;
 
-        @Watch('top')
+        @Watch('wordBox')
         update(newValue:WordBoxElement, oldValue:WordBoxElement){
-            if(!newValue.bottom.includes('_'))
-                this.bottomeIsShow = !this.bottomeIsShow;
+            //if(newValue.bottom=='_') this.bottomeIsShow = false;
         }
 
         @Emit()
         changeElement(){
             return this.wordBox;
         }
-
-        invisibleBottom(){
-            if(!this.wordBox?.bottom.includes('_'))
-                this.bottomeIsShow = !this.bottomeIsShow;
+        
+        @Emit('invisibleBottom')
+        invisibleBottom(index: number){
         }
 
         visibleToInvisibleBottome(){
-            this.bottomeIsShow = false;
-        }
-
-        closebottom(){
-            this.dialogBottom = false;
-            this.bottomeIsShow = true;
-            this.wordBox!.bottom = this.dialogBottomText;
         }
 
         editTopDiaglog(){
@@ -104,11 +94,14 @@ button:active {
             this.dialogBottom = true;
         }
 
-        @Emit()
         closeTop(){
             this.dialogTop = false;
-            this.wordBox!.top = this.dialogTopText;
-            return this.dialogTop
+        }
+
+        @Emit('closebottom')
+        closebottom(index: number, bottom: string){
+            console.log(index, bottom);
+            this.dialogBottom = false;
         }
     }
 </script>

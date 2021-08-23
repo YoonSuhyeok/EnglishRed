@@ -41,20 +41,36 @@ const moduleWord: Module<moduleWordState, RootState> = {
             const bottomsString = bottoms.join('`');
             AxiosService.instance.post('/word', {
                 pageName: data.pageName,
-                wordBox: {top: topsString, bottom: bottomsString},
+                top: topsString,
+                bottom: bottomsString,
                 userId: data.userId,
             })
             commit('setWordBox', data.wordBox);
         },
-        async loadWord({state, commit}, data: {pageName: string, userId: string}){
-            const word = await AxiosService.instance.get(`/word/w?pageName=${data.pageName}&userId=${data.userId}`);
-            const words = word.data;
+        Init({commit}, data: {pageName: string, userId: string}){
+            AxiosService.instance.post(`/word?pageName=${data.pageName}`, {
+                pageName:data.pageName,
+                top: '',
+                bottom: '',
+                userId: data.userId,
+            },{
+                
+            });
 
-            if(words.length ==0){
+            commit('setWordBox', []);
+        },
+        async loadWord({state, commit}, data: {pageName: string, userId: string, accessToken: string}){
+            console.log(data);
+            const word = await AxiosService.instance.get(`/word?pageName=${data.pageName}&userId=${data.userId}`,{
+                headers: { 'Authorization': 'Bearer' + data.accessToken }
+            });
+            const words = word.data;
+            console.log(words);
+            if(words.length ==0 || words.top.lengh == 0){
                 commit('setWordBox', []);
             } else {
-                const top: string[] = (word.data[0].top as string).split('`');
-                const bottom: string[] = (word.data[0].bottom as string).split('`');
+                const top: string[] = (word.data.top as string).split('`');
+                const bottom: string[] = (word.data.bottom as string).split('`');
                 const wordBox: WordBoxElement[] = [];
                 for(let i=0; i<top.length; ++i){
                     wordBox.push({top: top[i], bottom: bottom[i]});
@@ -68,6 +84,7 @@ const moduleWord: Module<moduleWordState, RootState> = {
             for(let i=0; i<data.top.length; ++i){
                 wordBox.push({top: data.top[i], bottom: data.bottom[i]});
             };
+            console.log(wordBox);
             commit('addWordBox', wordBox);
         },
         logout({commit}){
